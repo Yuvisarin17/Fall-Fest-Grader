@@ -64,6 +64,9 @@ def init_db():
         cols = {r["name"] for r in con.execute("PRAGMA table_info(teams)")}
         if "members" not in cols:
             con.execute("ALTER TABLE teams ADD COLUMN members TEXT")
+        scols = {r["name"] for r in con.execute("PRAGMA table_info(submissions)")}
+        if "payload" not in scols:
+            con.execute("ALTER TABLE submissions ADD COLUMN payload TEXT")
 
 
 def setting(key, default=None):
@@ -176,11 +179,11 @@ def submit(sub: Submission, authorization: str | None = Header(None)):
         score = None
     extra = {k: v for k, v in res.items() if k not in ("passed", "score", "valid", "message", "badge", "tiebreak")}
     with _db_lock, db() as con:
-        con.execute("""INSERT INTO submissions(team_id, challenge, ts, passed, score, valid, tiebreak, badge, message, extra)
-                       VALUES(?,?,?,?,?,?,?,?,?,?)""",
+        con.execute("""INSERT INTO submissions(team_id, challenge, ts, passed, score, valid, tiebreak, badge, message, extra, payload)
+                       VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
                     (team["id"], cid, time.time(), int(res["passed"]) if "passed" in res else None, score,
                      int(res.get("valid", True)), res.get("tiebreak"), res.get("badge"), res["message"],
-                     json.dumps(extra, default=str)))
+                     json.dumps(extra, default=str), json.dumps(sub.data, default=str)[:100_000]))
     out = {k: v for k, v in res.items() if k not in ("internal",)}
     if res.get("hidden"):
         out["score"] = None  # never leak a hidden score
@@ -385,6 +388,143 @@ def admin_setting(key: str, value: str, authorization: str | None = Header(None)
         raise HTTPException(400, "Settings: reveal, frozen.")
     set_setting(key, value)
     return {key: value}
+
+
+# ---------- integrity report ----------
+
+# Challenges where independent solutions rarely come out identical.
+VARIED = {"b12", "b13", "b14", "a1", "a3", "a5", "a6", "a7"}
+HARD = {"b10", "b11", "b12", "b13", "b14", "a1", "a3", "a5", "a6", "a7"}
+STREAK_WINDOW_S = 600
+STREAK_COUNT = 4
+
+
+def _norm(payload: str | None) -> str | None:
+    if not payload:
+        return None
+    try:
+        data = json.loads(payload)
+    except Exception:
+        return None
+    if isinstance(data, list):
+        data = "\n".join(map(str, data))
+    if not isinstance(data, str):
+        return None
+    lines = [" ".join(l.split()) for l in data.splitlines()]
+    return "\n".join(l for l in lines if l and not l.startswith(("OPENQASM", "include")))
+
+
+def integrity_report() -> list[dict]:
+    with db() as con:
+        teams = {r["id"]: dict(r) for r in con.execute("SELECT id, name, members, created FROM teams")}
+        subs = [dict(r) for r in con.execute(
+            "SELECT id, team_id, challenge, ts, passed, valid, payload FROM submissions ORDER BY ts")]
+    first_seen: dict[tuple, tuple] = {}
+    out = {tid: {"team": t["name"], "members": t["members"] or "", "joined": t["created"], "flags": [],
+                 "passes": [], "attempts": {}} for tid, t in teams.items()}
+    for s in subs:
+        r = out.get(s["team_id"])
+        if r is None:
+            continue
+        cid = s["challenge"]
+        a = r["attempts"].setdefault(cid, {"fails": 0, "first_ok": None})
+        ok = bool(s["passed"]) if s["passed"] is not None else bool(s["valid"])
+        if ok and a["first_ok"] is None:
+            a["first_ok"] = s["ts"]
+            a["fails_before"] = a["fails"]
+            if s["passed"] is not None:
+                r["passes"].append((s["ts"], cid))
+        elif not ok:
+            a["fails"] += 1
+        if cid in VARIED and ok:
+            key = (cid, _norm(s["payload"]))
+            if key[1]:
+                prev = first_seen.get(key)
+                if prev is None:
+                    first_seen[key] = (s["team_id"], s["ts"])
+                elif prev[0] != s["team_id"]:
+                    other = teams[prev[0]]["name"]
+                    msg = f"{cid.upper()}: identical circuit to {other} (submitted {int((s['ts'] - prev[1]) / 60)} min after them)"
+                    if msg not in r["flags"]:
+                        r["flags"].append(msg)
+    for r in out.values():
+        hard_ts = sorted(ts for ts, cid in r["passes"] if cid in HARD or int(cid[1:]) >= 7)
+        for i in range(len(hard_ts) - STREAK_COUNT + 1):
+            if hard_ts[i + STREAK_COUNT - 1] - hard_ts[i] <= STREAK_WINDOW_S:
+                r["flags"].append(f"Fast streak: {STREAK_COUNT} Part B challenges passed within "
+                                  f"{int((hard_ts[i + STREAK_COUNT - 1] - hard_ts[i]) / 60)} min")
+                break
+        clean = sorted(c for c, a in r["attempts"].items()
+                       if c in HARD and a["first_ok"] is not None and a.get("fails_before", 0) == 0)
+        if len(clean) >= 3:
+            r["flags"].append(f"First try, no failed attempts on {len(clean)} hard challenges: {', '.join(c.upper() for c in clean)}")
+        done = {c: a["first_ok"] for c, a in r["attempts"].items() if a["first_ok"] is not None}
+        beg = [f"b{i}" for i in range(1, 15)]
+        adv = [c for c in registry.META if registry.kind(c) == "score"]
+        first = min(done.values()) if done else None
+        r["finish_beginner"] = max(done[c] for c in beg) if all(c in done for c in beg) else None
+        r["finish_all"] = max(done[c] for c in beg + adv) if all(c in done for c in beg + adv) else None
+        r["first_submit"] = first
+        r["beg_done"] = sum(c in done for c in beg)
+        r["adv_done"] = sum(c in done for c in adv)
+        r["solved"] = len(done)
+        r["fails"] = sum(a["fails"] for a in r["attempts"].values())
+        r["timeline"] = [(int((ts - r["joined"]) / 60), cid.upper()) for ts, cid in r["passes"]]
+        del r["attempts"], r["passes"]
+    return sorted(out.values(), key=lambda r: (-len(r["flags"]), r["team"].lower()))
+
+
+@app.get("/admin/report", response_class=HTMLResponse)
+def admin_report(key: str = ""):
+    if not ADMIN_TOKEN or not secrets.compare_digest(key, ADMIN_TOKEN):
+        raise HTTPException(404, "Not Found")
+    import html as _h
+    report = integrity_report()
+
+    def speed_table(field, label, progress):
+        fin = sorted((r for r in report if r[field]), key=lambda r: r[field])
+        body = ""
+        for i, r in enumerate(fin, 1):
+            took = int((r[field] - r["first_submit"]) / 60)
+            fl = "; ".join(_h.escape(f) for f in r["flags"]) or '<span class="ok">none</span>'
+            body += (f'<tr class="{"hot" if r["flags"] else ""}"><td class="rk">{i}</td><td><b>{_h.escape(r["team"])}</b>'
+                     f'<div class="m">{_h.escape(r["members"])}</div></td>'
+                     f'<td><span class="t" data-ts="{r[field]}"></span></td><td>{took} min</td><td class="fl">{fl}</td></tr>')
+        if not body:
+            close = sorted(report, key=lambda r: -progress(r))[:5]
+            near = ", ".join(f"{_h.escape(r['team'])} ({progress(r)})" for r in close if progress(r)) or "nobody yet"
+            body = f'<tr><td colspan="5" class="m">No finishers yet. Closest: {near}</td></tr>'
+        return (f"<h2>{label}</h2><table><tr><th>#</th><th>Team</th><th>Finished at</th>"
+                f"<th>First to last submission</th><th>Integrity flags</th></tr>{body}</table>")
+
+    speed = (speed_table("finish_beginner", "Speed track: all 14 beginner challenges", lambda r: r["beg_done"])
+             + speed_table("finish_all", "Speed track: everything (14 beginner + 7 advanced)",
+                           lambda r: r["beg_done"] + r["adv_done"]))
+    rows = []
+    for r in report:
+        flags = "".join(f"<li>{_h.escape(f)}</li>" for f in r["flags"]) or '<span class="ok">none</span>'
+        tl = " · ".join(f"{_h.escape(c)} @{m}m" for m, c in r["timeline"]) or "-"
+        rows.append(f'<tr class="{"hot" if r["flags"] else ""}"><td><b>{_h.escape(r["team"])}</b>'
+                    f'<div class="m">{_h.escape(r["members"])}</div></td><td>{r["solved"]}</td><td>{r["fails"]}</td>'
+                    f'<td><ul>{flags}</ul></td><td class="m">{tl}</td></tr>')
+    return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="60"><title>Integrity report</title><style>
+body{{background:#0d0f1a;color:#eef0f8;font-family:system-ui,sans-serif;margin:0;padding:24px}}
+h1{{margin:0 0 4px}} p{{color:#8a90ab;max-width:820px}} table{{border-collapse:collapse;width:100%;margin-top:16px}}
+td,th{{text-align:left;vertical-align:top;padding:10px 8px;border-bottom:1px solid #262b44;font-size:14px}}
+th{{color:#8a90ab;font-weight:600}} tr.hot td{{background:rgba(255,131,137,.07)}} ul{{margin:0;padding-left:18px;color:#ffb3b8}}
+.m{{color:#8a90ab;font-size:13px}} .ok{{color:#42be65}} h2{{margin:28px 0 0;font-size:18px}}
+td.rk{{font-weight:700;color:#f1c21b;width:28px}} td.fl{{color:#ffb3b8;font-size:13px}}
+</style></head><body><h1>Integrity report</h1>
+<p>Speed track ranks by the clock time of each team's last required completion (advanced counts once a valid
+submission is in). Flags mean "worth a conversation", not "cheated". Fast learners and experienced students trip the speed flags too.
+Timeline shows minutes after sign-up for each beginner pass. Ask flagged teams to explain one solution out loud.
+Refreshes every minute.</p>
+{speed}
+<h2>All teams</h2>
+<table><tr><th>Team</th><th>Solved</th><th>Failed tries</th><th>Flags</th><th>Timeline</th></tr>{"".join(rows)}</table>
+<script>document.querySelectorAll(".t").forEach(e=>{{e.textContent=new Date(+e.dataset.ts*1000).toLocaleTimeString([], {{hour:"numeric",minute:"2-digit",second:"2-digit"}})}})</script>
+</body></html>"""
 
 
 @app.get("/admin/teams")
