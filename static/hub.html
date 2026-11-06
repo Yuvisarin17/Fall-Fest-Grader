@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qiskit Fall Fest 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0d0f1a; --panel:#161a2b; --panel2:#1c2136; --line:#262b44; --ink:#eef0f8; --muted:#8a90ab;
+          --accent:#a56eff; --accent2:#33b1ff; --good:#42be65; }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans",system-ui,sans-serif; line-height:1.55; }
+  a { color:var(--accent2); }
+  nav { position:sticky; top:0; z-index:5; background:rgba(13,15,26,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .navin { max-width:1040px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .brand { font-weight:700; color:var(--ink); text-decoration:none; margin-right:auto; }
+  .brand span { color:var(--accent); }
+  nav a.l { color:var(--muted); text-decoration:none; font-size:14px; }
+  nav a.l:hover { color:var(--ink); }
+  .wrap { max-width:1040px; margin:0 auto; padding:0 20px; }
+  .hero { padding:56px 0 32px; }
+  .hero h1 { font-size:clamp(32px,5vw,54px); line-height:1.05; margin:0 0 12px; letter-spacing:-1px; }
+  .hero h1 span { color:var(--accent); }
+  .hero p { color:var(--muted); font-size:18px; max-width:640px; margin:0 0 26px; }
+  .btns { display:flex; gap:12px; flex-wrap:wrap; }
+  .btn { display:inline-block; padding:12px 20px; border-radius:10px; font-weight:600; text-decoration:none; border:1px solid var(--line); color:var(--ink); background:var(--panel); }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn:hover { filter:brightness(1.1); }
+  section { padding:34px 0; }
+  h2 { font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin:0 0 16px; }
+  .steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; }
+  .num { width:30px; height:30px; border-radius:50%; background:var(--accent); color:#fff; display:grid; place-items:center; font-weight:700; margin-bottom:10px; }
+  .card h3 { margin:0 0 6px; font-size:18px; }
+  .card p { margin:0; color:var(--muted); font-size:15px; }
+  .card .btn { margin-top:14px; padding:9px 14px; font-size:14px; }
+  .tracks { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; }
+  .track h3 { margin:0 0 4px; } .track .sub { color:var(--muted); font-size:14px; margin-bottom:12px; }
+  ol.ch { list-style:none; margin:0; padding:0; }
+  ol.ch li { display:flex; gap:12px; padding:8px 0; border-top:1px solid var(--line); font-size:15px; }
+  ol.ch li:first-child { border-top:0; }
+  .id { font-family:"IBM Plex Mono",monospace; color:var(--accent2); min-width:34px; font-size:14px; padding-top:1px; }
+  .ch b { font-weight:600; } .ch span.d { color:var(--muted); display:block; font-size:14px; }
+  .part { font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); margin:14px 0 4px; }
+  details { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin-bottom:10px; }
+  summary { cursor:pointer; font-weight:600; }
+  details p, details pre { color:var(--muted); margin:10px 0 0; }
+  pre { background:#0f1220; border:1px solid var(--line); border-radius:9px; padding:12px; overflow-x:auto; font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink); }
+  code { font-family:"IBM Plex Mono",monospace; font-size:.92em; background:var(--panel2); padding:1px 5px; border-radius:5px; }
+  footer { color:var(--muted); font-size:13px; padding:30px 0 50px; border-top:1px solid var(--line); margin-top:20px; }
+  .soon { color:var(--muted); font-size:14px; font-style:italic; }
+</style>
+</head>
+<body>
+<nav><div class="navin">
+  <a class="brand" href="/">Qiskit Fall Fest <span>2026</span></a>
+  <a class="l" href="#start">Get started</a>
+  <a class="l" href="#challenges">Challenges</a>
+  <a class="l" href="#help">Help</a>
+  <a class="l" href="/leaderboard">Leaderboard</a>
+</div></nav>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Write quantum circuits.<br><span>Climb the board.</span></h1>
+    <p>14 beginner challenges that start from zero, 7 scored advanced challenges, and a live leaderboard. Work solo or as a team, in your browser, with nothing to install.</p>
+    <div class="btns">
+      <a class="btn primary" href="/join">Sign up</a>
+      <a class="btn" href="/leaderboard">See the leaderboard</a>
+    </div>
+  </div>
+
+  <section id="start">
+    <h2>Get started</h2>
+    <div class="steps">
+      <div class="card"><div class="num">1</div><h3>Sign up</h3>
+        <p>Pick a team name (or use your own if you're solo). You'll need the event code shown at the front of the room. Teammates share one token.</p>
+        <a class="btn primary" href="/join">Get my token</a></div>
+      <div class="card"><div class="num">2</div><h3>Open a notebook</h3>
+        <p>Open one in Google Colab, then click <b>File → Save a copy in Drive</b> so your work is saved.</p>
+        {{NOTEBOOK_BUTTONS}}</div>
+      <div class="card"><div class="num">3</div><h3>Paste and run</h3>
+        <p>Paste the code from the sign-up page into the first cell and press <b>Shift+Enter</b>. Then work down the challenges. Every <code>submit(...)</code> gives instant feedback and updates the leaderboard.</p></div>
+    </div>
+  </section>
+
+  <section id="challenges">
+    <h2>Challenges</h2>
+    <div class="tracks">
+      <div class="card track">
+        <h3>Beginner ladder</h3>
+        <div class="sub">No quantum background needed. Each challenge adds one idea. Pass/fail with hints, unlimited tries.</div>
+        <div class="part">Part A: no background</div>
+        <ol class="ch">
+          <li><span class="id">B1</span><div><b>Flip it</b><span class="d">The X gate and measurement</span></div></li>
+          <li><span class="id">B2</span><div><b>Quantum coin</b><span class="d">Superposition with the H gate</span></div></li>
+          <li><span class="id">B3</span><div><b>Undo the magic</b><span class="d">Interference</span></div></li>
+          <li><span class="id">B4</span><div><b>Loaded coin</b><span class="d">Rotations and unfair odds</span></div></li>
+          <li><span class="id">B5</span><div><b>States that agree</b><span class="d">The CNOT gate</span></div></li>
+          <li><span class="id">B6</span><div><b>States that disagree</b><span class="d">Combining gates</span></div></li>
+        </ol>
+        <div class="part">Part B: beginner</div>
+        <ol class="ch">
+          <li><span class="id">B7</span><div><b>Bell zoo</b><span class="d">Entanglement and phase</span></div></li>
+          <li><span class="id">B8</span><div><b>GHZ fan-out</b><span class="d">Circuit depth (bonus badge)</span></div></li>
+          <li><span class="id">B9</span><div><b>Plus or minus?</b><span class="d">Measurement bases</span></div></li>
+          <li><span class="id">B10</span><div><b>Find the secret number</b><span class="d">Bernstein-Vazirani and oracles</span></div></li>
+          <li><span class="id">B11</span><div><b>Find the marked card</b><span class="d">Grover's search</span></div></li>
+          <li><span class="id">B12</span><div><b>Teleport it</b><span class="d">Dynamic circuits</span></div></li>
+          <li><span class="id">B13</span><div><b>Fix the flip</b><span class="d">Quantum error correction</span></div></li>
+          <li><span class="id">B14</span><div><b>Fit on the chip</b><span class="d">Hardware routing</span></div></li>
+        </ol>
+      </div>
+      <div class="card track">
+        <h3>Advanced</h3>
+        <div class="sub">Scored and ranked. Your best submission counts.</div>
+        <ol class="ch">
+          <li><span class="id">A1</span><div><b>Circuit golf</b><span class="d">Fewest CNOTs on a linear chip</span></div></li>
+          <li><span class="id">A2</span><div><b>QAOA MaxCut</b><span class="d">Highest approximation ratio on a 10-node graph</span></div></li>
+          <li><span class="id">A3</span><div><b>Ground state hunt</b><span class="d">VQE on a 6-qubit Ising chain</span></div></li>
+          <li><span class="id">A4</span><div><b>Beat the noise</b><span class="d">Error mitigation. Scores hidden until the end</span></div></li>
+          <li><span class="id">A5</span><div><b>Trotter tradeoff</b><span class="d">Fidelity vs. circuit cost</span></div></li>
+          <li><span class="id">A6</span><div><b>Beat the physical error rate</b><span class="d">Error correction under noise</span></div></li>
+          <li><span class="id">A7</span><div><b>Route it</b><span class="d">Beat Qiskit's compiler on heavy-hex</span></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section id="help">
+    <h2>Help</h2>
+    <details><summary>I lost my token</summary><p>Ask a mentor. They can look it up. Don't sign up again under a new name, or your progress will be split across two rows.</p></details>
+    <details><summary>"Logged in" never shows up / the first cell fails</summary><p>Make sure you pasted the whole block from the sign-up page, including the <code>!pip install</code> line. If it still fails, go to <b>Runtime → Restart session</b> and run the cell again.</p></details>
+    <details><summary>How do I see what my circuit does?</summary><p><code>counts(qc)</code> runs it 1000 times and shows the results. <code>print(qc.draw())</code> draws it.</p></details>
+    <details><summary>My submission said "Slow down"</summary><p>Submissions are limited to one every few seconds per team. The notebook waits and retries for you, so just give it a moment.</p></details>
+    <details><summary>Can I work with others?</summary><p>Yes. Sign up once as a team and everyone uses the same token. Each team's best result counts.</p></details>
+    <details><summary>Still stuck?</summary><p>Raise your hand. Mentors are walking around.</p></details>
+  </section>
+
+  <footer>Qiskit Fall Fest 2026 · Hosted by the Quantum Club at Virginia Tech</footer>
+</div>
+</body>
+</html>

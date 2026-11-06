@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="30">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fall Fest Leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f1a; --panel: #161a2b; --line: #262b44; --ink: #eef0f8; --muted: #8a90ab;
+    --accent: #a56eff; --accent2: #33b1ff; --good: #42be65; --gold: #f1c21b; --silver: #c6c6c6; --bronze: #d2a06d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+           padding: 28px 32px 8px; }
+  h1 { margin: 0; font-size: clamp(24px, 3vw, 40px); letter-spacing: -0.5px; }
+  h1 span { color: var(--accent); }
+  .updated { color: var(--muted); font-size: 13px; }
+  main { padding: 8px 32px 40px; display: grid; gap: 28px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin: 0 0 12px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .grid-wrap { overflow-x: auto; }
+  table.grid { border-collapse: collapse; width: 100%; min-width: 640px; }
+  .grid th, .grid td { padding: 7px 6px; text-align: center; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .grid th { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 12px; }
+  .grid td.team, .grid th.team { text-align: left; font-weight: 600; white-space: nowrap; }
+  .dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--line); }
+  .dot.on { background: var(--good); box-shadow: 0 0 8px rgba(66,190,101,.6); }
+  .dot.on.b { background: var(--accent2); box-shadow: 0 0 8px rgba(51,177,255,.6); }
+  .count { font-family: "IBM Plex Mono", monospace; color: var(--muted); }
+  .badge { font-size: 11px; background: rgba(165,110,255,.18); color: var(--accent); padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .card h3 { margin: 0 0 2px; font-size: 17px; }
+  .card .sub { color: var(--muted); font-size: 12px; margin-bottom: 10px; font-family: "IBM Plex Mono", monospace; }
+  .card ol { list-style: none; margin: 0; padding: 0; }
+  .card li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .card li:last-child { border-bottom: 0; }
+  .rank { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px;
+          font-weight: 700; background: var(--line); color: var(--ink); flex: none; }
+  .r1 { background: var(--gold); color: #1a1a1a; } .r2 { background: var(--silver); color: #1a1a1a; } .r3 { background: var(--bronze); color: #1a1a1a; }
+  .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .score { font-family: "IBM Plex Mono", monospace; color: var(--accent2); }
+  .empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+  @media (max-width: 600px) { header, main { padding-left: 16px; padding-right: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Qiskit Fall Fest <span>2026</span></h1>
+  <div class="updated">Refreshes every 30s</div>
+</header>
+<main>
+  <section>
+    <h2>Beginner ladder</h2>
+    <div class="panel grid-wrap"><table class="grid"><tr><th class="team">Team</th>{{HEAD}}<th>Done</th></tr>{{ROWS}}</table></div>
+  </section>
+  <section>
+    <h2>Advanced leaderboard</h2>
+    <div class="cards">{{CARDS}}</div>
+  </section>
+</main>
+</body>
+</html>

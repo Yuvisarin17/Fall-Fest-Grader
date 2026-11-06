@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fall Fest Leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f1a; --panel: #161a2b; --line: #262b44; --ink: #eef0f8; --muted: #8a90ab;
+    --accent: #a56eff; --accent2: #33b1ff; --good: #42be65; --gold: #f1c21b; --silver: #c6c6c6; --bronze: #d2a06d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+           padding: 28px 32px 8px; }
+  h1 { margin: 0; font-size: clamp(24px, 3vw, 40px); letter-spacing: -0.5px; }
+  h1 span { color: var(--accent); }
+  .updated { color: var(--muted); font-size: 13px; }
+  main { padding: 8px 32px 40px; display: grid; gap: 28px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin: 0 0 12px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .grid-wrap { overflow-x: auto; }
+  table.grid { border-collapse: collapse; width: 100%; min-width: 640px; }
+  .grid th, .grid td { padding: 7px 6px; text-align: center; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .grid th { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 12px; }
+  .grid td.team, .grid th.team { text-align: left; font-weight: 600; white-space: nowrap; }
+  .dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--line); }
+  .dot.on { background: var(--good); box-shadow: 0 0 8px rgba(66,190,101,.6); }
+  .dot.on.b { background: var(--accent2); box-shadow: 0 0 8px rgba(51,177,255,.6); }
+  .count { font-family: "IBM Plex Mono", monospace; color: var(--muted); }
+  .badge { font-size: 11px; background: rgba(165,110,255,.18); color: var(--accent); padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .card h3 { margin: 0 0 2px; font-size: 17px; }
+  .card .sub { color: var(--muted); font-size: 12px; margin-bottom: 10px; font-family: "IBM Plex Mono", monospace; }
+  .card ol { list-style: none; margin: 0; padding: 0; }
+  .card li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .card li:last-child { border-bottom: 0; }
+  .rank { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px;
+          font-weight: 700; background: var(--line); color: var(--ink); flex: none; }
+  .r1 { background: var(--gold); color: #1a1a1a; } .r2 { background: var(--silver); color: #1a1a1a; } .r3 { background: var(--bronze); color: #1a1a1a; }
+  .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .score { font-family: "IBM Plex Mono", monospace; color: var(--accent2); }
+  .empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+  @media (max-width: 600px) { header, main { padding-left: 16px; padding-right: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Qiskit Fall Fest <span>2026</span></h1>
+  <div class="updated" id="updated">Loading…</div>
+</header>
+<main>
+  <section>
+    <h2>Beginner ladder</h2>
+    <div class="panel grid-wrap"><table class="grid" id="beg"></table></div>
+  </section>
+  <section>
+    <h2>Advanced leaderboard</h2>
+    <div class="cards" id="adv"></div>
+  </section>
+</main>
+<script>
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = v => {
+  if (v === null || v === undefined) return "submitted";
+  if (Number.isInteger(v)) return String(v);
+  return Math.abs(v) >= 100 ? v.toFixed(1) : v.toPrecision(4);
+};
+async function load() {
+  try {
+    const r = await fetch("/api/leaderboard", {cache: "no-store"});
+    const d = await r.json();
+    const cols = Array.from({length: 14}, (_, i) => "b" + (i + 1));
+    let h = "<tr><th class='team'>Team</th>" + cols.map(c => `<th>${c.slice(1)}</th>`).join("") + "<th>Done</th></tr>";
+    if (!d.beginner.length) h += "<tr><td class='team' colspan='16' style='color:var(--muted)'>No teams yet</td></tr>";
+    for (const t of d.beginner) {
+      h += `<tr><td class="team">${esc(t.team)}${t.badges.map(b => `<span class="badge">${esc(b)}</span>`).join("")}</td>`;
+      h += cols.map((c, i) => `<td><span class="dot ${t.done.includes(c) ? "on" : ""} ${i >= 6 ? "b" : ""}"></span></td>`).join("");
+      h += `<td class="count">${t.done.length}/14</td></tr>`;
+    }
+    document.getElementById("beg").innerHTML = h;
+    let a = "";
+    for (const [cid, c] of Object.entries(d.advanced)) {
+      const sub = c.hidden ? "scores revealed at the end" : (c.better === "low" ? "lower is better" : "higher is better");
+      a += `<div class="panel card"><h3>${cid.toUpperCase()} · ${esc(c.title)}</h3><div class="sub">${sub}</div><ol>`;
+      if (!c.entries.length) a += `<div class="empty">No valid submissions yet</div>`;
+      c.entries.slice(0, 10).forEach((e, i) => {
+        const r = c.hidden ? "" : `r${i + 1}`;
+        a += `<li><span class="rank ${r}">${c.hidden ? "·" : i + 1}</span><span class="name">${esc(e.team)}</span>` +
+             `<span class="score">${c.hidden ? "submitted" : fmt(e.score)}</span></li>`;
+      });
+      a += "</ol></div>";
+    }
+    document.getElementById("adv").innerHTML = a;
+    document.getElementById("updated").textContent = "Updated " + new Date().toLocaleTimeString();
+  } catch (e) {
+    document.getElementById("updated").textContent = "Reconnecting…";
+  }
+}
+load();
+setInterval(load, 10000);
+</script>
+</body>
+</html>
